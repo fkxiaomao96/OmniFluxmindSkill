@@ -9,6 +9,20 @@
 - 公域线索列表、元信息、总览与采集触发
 - 竞对账号关键词搜索
 
+所有带 `category` 的接口仅支持以下枚举：
+
+- `keyboard`
+- `mouse`
+- `memory`
+- `monitor`
+- `dress`
+
+新增使用场景：
+
+- 如果用户想分析产品链接并进一步获取电商洞察，可以先打开无头浏览器分析页面内容并抽取类目。
+- 当抽取出的类目属于 `keyboard`、`mouse`、`memory`、`monitor`、`dress` 时，再调用 OmniFluxmind 的类目洞察接口。
+- 如果类目不在支持范围内，停止调用类目洞察接口并明确说明当前不支持。
+
 ## 目录结构
 
 ```text
@@ -67,7 +81,8 @@ export OMNIFLUXMIND_API_KEY="你的最新sid"
 ## 爆款视频参数
 
 - `category`
-  类目编码，可选
+  类目编码，可选；仅支持：
+  `keyboard`、`mouse`、`memory`、`monitor`、`dress`
 - `timeRange`
   当前前端观察到支持：
   `all`、`3d`、`7d`、`15d`
@@ -104,7 +119,8 @@ export OMNIFLUXMIND_API_KEY="你的最新sid"
 ## 潜力爆品参数
 
 - `category`
-  类目编码，可选
+  类目编码，可选；仅支持：
+  `keyboard`、`mouse`、`memory`、`monitor`、`dress`
 - `page`
   页码，默认 `1`
 - `size`
@@ -131,11 +147,14 @@ export OMNIFLUXMIND_API_KEY="你的最新sid"
 
 - `gmvMin` / `gmvMax` 单位为分
 - `POST /insight/potential-products/collect` 支持空 body 全量采集，或传 `category` 单类目采集
+  - `category` 仅支持：
+    `keyboard`、`mouse`、`memory`、`monitor`、`dress`
 
 ## 公域线索参数
 
 - `category`
-  类目编码，可选
+  类目编码，可选；仅支持：
+  `keyboard`、`mouse`、`memory`、`monitor`、`dress`
 - `platform`
   平台，可选，前端当前使用：
   `douyin`、`kuaishou`、`xiaohongshu`
@@ -188,7 +207,8 @@ export OMNIFLUXMIND_API_KEY="你的最新sid"
 
 - `POST /api/insight/leads/collect`
 - body 支持：
-  - `category` 可选
+  - `category` 可选，仅支持：
+    `keyboard`、`mouse`、`memory`、`monitor`、`dress`
   - `collectType` 可选，支持 `all`、`comment`、`danmaku`
 
 ## 竞对账号搜索参数

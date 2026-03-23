@@ -14,6 +14,14 @@ Current scope covers:
 - public-lead lists, meta, and overview
 - competitor-account search by keyword
 
+Supported category enum for all category-based OmniFluxmind interfaces:
+
+- `keyboard`
+- `mouse`
+- `memory`
+- `monitor`
+- `dress`
+
 ## Required config
 
 - `OMNIFLUXMIND_BASE_URL`
@@ -31,11 +39,20 @@ Current scope covers:
    - potential products
    - public leads
    - competitor accounts
-2. Clarify filters if category, time range, sorting, scene type, intention status, or pagination is ambiguous.
-3. Use the matching bundled script for raw collection.
-4. Parse the wrapped JSON response.
-5. Summarize the result in business terms instead of dumping raw JSON.
-6. Convert Unix seconds such as `publishTime`, `crawlTime`, and `eventTime` when presenting dates.
+2. If the user wants ecommerce insight from a product link, first open the product page in a headless browser and inspect the page content.
+3. Extract the most likely product category from the page.
+4. Only continue with OmniFluxmind category-based APIs if the extracted category is one of:
+   - `keyboard`
+   - `mouse`
+   - `memory`
+   - `monitor`
+   - `dress`
+5. If the category is unsupported or cannot be determined reliably, stop before calling OmniFluxmind category-based APIs and explain the limitation.
+6. Clarify filters if category, time range, sorting, scene type, intention status, or pagination is ambiguous.
+7. Use the matching bundled script for raw collection.
+8. Parse the wrapped JSON response.
+9. Summarize the result in business terms instead of dumping raw JSON.
+10. Convert Unix seconds such as `publishTime`, `crawlTime`, and `eventTime` when presenting dates.
 
 ## API summary
 
@@ -47,7 +64,7 @@ Current scope covers:
 Query parameters:
 
 - `category` `string` optional
-  Category code. Observed examples: `keyboard`, `mouse`, `memory`, `monitor`, `dress`.
+  Supported enum: `keyboard`, `mouse`, `memory`, `monitor`, `dress`.
 - `timeRange` `string` optional
   Observed values: `all`, `3d`, `7d`, `15d`
 - `favoriteStatus` `string` optional
@@ -86,6 +103,7 @@ Common `data.list[]` fields:
 Query parameters:
 
 - `category` `string` optional
+  Supported enum: `keyboard`, `mouse`, `memory`, `monitor`, `dress`.
 - `page` `number` optional
   Default: `1`
 - `size` `number` optional
@@ -120,7 +138,7 @@ Admin collection endpoint:
 - URL: `{OMNIFLUXMIND_BASE_URL}/insight/potential-products/collect`
 - Body:
   - `{}` to collect all categories
-  - `{"category":"keyboard"}` to collect one category
+  - `{"category":"keyboard"}` to collect one category, where `category` must be one of `keyboard`, `mouse`, `memory`, `monitor`, `dress`
 - Response:
   - one category: `{"category":"keyboard","count":12}`
   - all categories: `{"results":{"keyboard":12,"mouse":8}}`
@@ -133,6 +151,7 @@ Admin collection endpoint:
 Query parameters:
 
 - `category` `string` optional
+  Supported enum: `keyboard`, `mouse`, `memory`, `monitor`, `dress`.
 - `platform` `string` optional
   Observed values in current UI: `douyin`, `kuaishou`, `xiaohongshu`
 - `sceneType` `string` optional
@@ -176,7 +195,7 @@ Related read endpoints:
   Returns `categoryOptions`, `searchSceneOptions`, and `collectSceneOptions`.
 - `GET {OMNIFLUXMIND_BASE_URL}/insight/leads/overview`
   Query:
-  - `category` optional
+  - `category` optional. Supported enum: `keyboard`, `mouse`, `memory`, `monitor`, `dress`.
   Returns `windowDays`, `totalLeads`, `intentLeads`, and `followedLeads`.
 
 Admin collection endpoint:
@@ -185,6 +204,7 @@ Admin collection endpoint:
 - URL: `{OMNIFLUXMIND_BASE_URL}/insight/leads/collect`
 - Body:
   - `category` `string` optional
+    Supported enum: `keyboard`, `mouse`, `memory`, `monitor`, `dress`.
   - `collectType` `string` optional
     `all`, `comment`, `danmaku`
 - Response:

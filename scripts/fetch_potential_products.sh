@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/category_utils.sh"
+
 base_url="${OMNIFLUXMIND_BASE_URL:-http://114.55.91.177/api}"
 referer="${OMNIFLUXMIND_REFERER:-http://114.55.91.177/potential-products}"
 api_key="${OMNIFLUXMIND_API_KEY:-}"
@@ -34,6 +36,8 @@ if [[ -z "$api_key" ]]; then
   echo "OMNIFLUXMIND_API_KEY is required. Configure it manually with the current sid value." >&2
   exit 1
 fi
+
+validate_category "$category"
 
 curl_args=(
   --fail

@@ -1,7 +1,7 @@
 interface:
   display_name: "OmniFluxmindSkill"
-  short_description: "采集 OmniFluxmind 电商视频、爆品、线索与竞对情报"
-  default_prompt: "Use $OmniFluxmindSkill to collect and summarize OmniFluxmind hot videos, potential products, public leads, and competitor-account ecommerce intelligence."
+  short_description: "采集 OmniFluxmind 电商视频、爆品、线索与竞对情报，也可先分析产品链接再进入洞察流程"
+  default_prompt: "Use $OmniFluxmindSkill to collect and summarize OmniFluxmind hot videos, potential products, public leads, and competitor-account ecommerce intelligence. If the user wants insight from a product link, first inspect the page in a headless browser, extract the category, and only continue when it is one of keyboard, mouse, memory, monitor, or dress."
 
 policy:
   allow_implicit_invocation: true
