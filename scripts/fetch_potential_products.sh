@@ -44,6 +44,7 @@ curl_args=(
   -H "Accept: application/json, text/plain, */*"
   -H "Referer: ${referer}"
   -H "Cookie: sid=${api_key}"
+  -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"
   --data-urlencode "page=${page}"
   --data-urlencode "size=${size}"
 )
