@@ -1,12 +1,18 @@
+---
 name: OmniFluxmindSkill
-description: Use this skill when the user wants to collect OmniFluxmind ecommerce intelligence, especially hot-video lists, ranking filters, and video metadata from the OmniFluxmind local API.
+description: Use this skill when the user wants to collect OmniFluxmind ecommerce intelligence from the OmniFluxmind API, especially hot videos, potential products, public leads, and competitor-account search results.
 ---
 
 # OmniFluxmindSkill
 
 Use this skill when the task is to collect, filter, or summarize ecommerce intelligence from OmniFluxmind.
 
-Current scope: only the hot-video list API is covered.
+Current scope covers:
+
+- hot-video lists
+- potential-product lists
+- public-lead lists, meta, and overview
+- competitor-account search by keyword
 
 ## Required config
 
@@ -16,53 +22,214 @@ Current scope: only the hot-video list API is covered.
   This must be the current `sid` cookie value. Treat it as the API key and send it as `Cookie: sid=<value>`.
   This value must be configured manually.
 - `OMNIFLUXMIND_REFERER`
-  Default: `http://114.55.91.177/hot-videos`
+  Optional override. If unset, each bundled script uses the page path that matches its endpoint.
 
 ## Workflow
 
-1. Confirm the user's filter intent if category, time range, favorite filter, sorting, or pagination is ambiguous.
-2. Call `scripts/fetch_hot_videos.sh` for raw data collection.
-3. Parse the JSON response.
-4. Summarize the results in business terms:
-   - which videos rank highest
-   - which creators appear repeatedly
-   - engagement patterns
-   - which categories or platforms dominate
-5. Convert `publishTime` and `crawlTime` from Unix seconds when presenting dates.
+1. Confirm which OmniFluxmind dataset the user wants:
+   - hot videos
+   - potential products
+   - public leads
+   - competitor accounts
+2. Clarify filters if category, time range, sorting, scene type, intention status, or pagination is ambiguous.
+3. Use the matching bundled script for raw collection.
+4. Parse the wrapped JSON response.
+5. Summarize the result in business terms instead of dumping raw JSON.
+6. Convert Unix seconds such as `publishTime`, `crawlTime`, and `eventTime` when presenting dates.
 
-## API
+## API summary
 
-### Endpoint
+### 1. Hot videos
 
 - Method: `GET`
 - URL: `{OMNIFLUXMIND_BASE_URL}/insight/hot-videos`
 
-### Required headers
-
-- `Accept: application/json, text/plain, */*`
-- `Referer: {OMNIFLUXMIND_REFERER}`
-- `Cookie: sid={OMNIFLUXMIND_API_KEY}`
-
-### Query parameters
+Query parameters:
 
 - `category` `string` optional
-  Category code. Observed examples include `keyboard`, `mouse`, `memory`, `monitor`, `dress`.
+  Category code. Observed examples: `keyboard`, `mouse`, `memory`, `monitor`, `dress`.
 - `timeRange` `string` optional
-  Supported values observed in current frontend:
-  `all`, `3d`, `7d`, `15d`
-  Older interface docs also mention `30d`; treat it as possible but verify if behavior matters.
+  Observed values: `all`, `3d`, `7d`, `15d`
 - `favoriteStatus` `string` optional
-  Supported values:
   `ALL`, `FAVORITED`, `UNFAVORITED`
 - `sortBy` `string` optional
-  Supported values:
   `COMPREHENSIVE`, `LIKE_DESC`, `PUBLISH_TIME_DESC`, `SHARE_DESC`
 - `page` `number` optional
   Default in current UI: `1`
 - `size` `number` optional
   Default in current UI: `12`
 
-### Raw request example
+Common `data.list[]` fields:
+
+- `id`
+- `title`
+- `authorName`
+- `platform`
+- `platformPostId`
+- `videoUrl`
+- `likeCount`
+- `commentCount`
+- `collectCount`
+- `shareCount`
+- `coverUrl`
+- `videoDna`
+- `publishTime`
+- `crawlTime`
+- `category`
+- `favorite`
+
+### 2. Potential products
+
+- Method: `GET`
+- URL: `{OMNIFLUXMIND_BASE_URL}/insight/potential-products`
+
+Query parameters:
+
+- `category` `string` optional
+- `page` `number` optional
+  Default: `1`
+- `size` `number` optional
+  Backend default: `10`
+  Current frontend often uses `12`
+
+Common `data.list[]` fields:
+
+- `id`
+- `platform`
+- `platformProductId`
+- `productName`
+- `productImage`
+- `productUrl`
+- `category`
+- `gmvMin`
+- `gmvMax`
+- `salesMin`
+- `salesMax`
+- `crawlTime`
+- `createTime`
+- `updateTime`
+
+Notes:
+
+- `gmvMin` and `gmvMax` are in fen.
+- `salesMin` and `salesMax` are raw counts.
+
+Admin collection endpoint:
+
+- Method: `POST`
+- URL: `{OMNIFLUXMIND_BASE_URL}/insight/potential-products/collect`
+- Body:
+  - `{}` to collect all categories
+  - `{"category":"keyboard"}` to collect one category
+- Response:
+  - one category: `{"category":"keyboard","count":12}`
+  - all categories: `{"results":{"keyboard":12,"mouse":8}}`
+
+### 3. Public leads
+
+- Method: `GET`
+- URL: `{OMNIFLUXMIND_BASE_URL}/insight/leads`
+
+Query parameters:
+
+- `category` `string` optional
+- `platform` `string` optional
+  Observed values in current UI: `douyin`, `kuaishou`, `xiaohongshu`
+- `sceneType` `string` optional
+  `comment`, `danmaku`
+- `intentionLevel` `string` optional
+  `HIGH`, `NONE`
+- `followStatus` `string` optional
+  `UNFOLLOWED`, `IN_PROGRESS`, `FOLLOWED`, `FAILED`
+- `page` `number` optional
+  Default: `1`
+- `size` `number` optional
+  Default: `10`
+
+Common `data.list[]` fields:
+
+- `id`
+- `itemId`
+- `leadKey`
+- `platform`
+- `sceneType`
+- `category`
+- `actorName`
+- `actorSecUid`
+- `actorAvatar`
+- `actorProfileUrl`
+- `contentText`
+- `intentionLevel`
+- `sourceTitle`
+- `sourceAvatar`
+- `sourceId`
+- `leadUrl`
+- `eventTime`
+- `crawlTime`
+- `followStatus`
+- `followedEcomAccountId` optional
+- `followedEcomAccountName` optional
+
+Related read endpoints:
+
+- `GET {OMNIFLUXMIND_BASE_URL}/insight/leads/meta`
+  Returns `categoryOptions`, `searchSceneOptions`, and `collectSceneOptions`.
+- `GET {OMNIFLUXMIND_BASE_URL}/insight/leads/overview`
+  Query:
+  - `category` optional
+  Returns `windowDays`, `totalLeads`, `intentLeads`, and `followedLeads`.
+
+Admin collection endpoint:
+
+- Method: `POST`
+- URL: `{OMNIFLUXMIND_BASE_URL}/insight/leads/collect`
+- Body:
+  - `category` `string` optional
+  - `collectType` `string` optional
+    `all`, `comment`, `danmaku`
+- Response:
+  - all categories: `{"message":"采集任务已提交，后台执行中"}`
+  - one category: `{"message":"采集任务已提交","category":"keyboard"}`
+
+### 4. Competitor-account search
+
+- Method: `POST`
+- URL: `{OMNIFLUXMIND_BASE_URL}/insight/category-user-profiles`
+
+Request body:
+
+- `platform` `string` required
+  Currently only `douyin` is supported.
+- `keyword` `string` required
+  Search keyword such as `键盘`, `鼠标`, `连衣裙`.
+
+Common `data.list[]` fields:
+
+- `platform`
+- `keyword`
+- `secUid`
+- `nickname`
+- `avatarUrl`
+- `uniqueId`
+- `signature`
+- `followerCount`
+- `videoTitle`
+- `videoAuthorName`
+
+Notes:
+
+- Current service searches videos first, then returns up to 3 matched competitor profiles.
+- Empty result is still a successful response with `data.list = []`.
+
+## Shared headers
+
+- `Accept: application/json, text/plain, */*`
+- `Referer: {OMNIFLUXMIND_REFERER}` or the script default for that page
+- `Cookie: sid={OMNIFLUXMIND_API_KEY}`
+
+## Raw request examples
+
+### Hot videos
 
 ```bash
 export OMNIFLUXMIND_API_KEY="your-current-sid"
@@ -78,87 +245,68 @@ curl --get "${OMNIFLUXMIND_BASE_URL%/}/insight/hot-videos" \
   --data-urlencode "size=12"
 ```
 
-### Response shape
+### Potential products
 
-Expect a wrapped response in this shape:
-
-```json
-{
-  "code": 0,
-  "message": "success",
-  "data": {
-    "total": 24,
-    "list": [
-      {
-        "id": 33,
-        "title": "罗技鼠标横评",
-        "authorName": "外设测评站",
-        "platform": "douyin",
-        "platformPostId": "7512345678901234567",
-        "videoUrl": "https://www.douyin.com/video/7512345678901234567",
-        "likeCount": 52341,
-        "commentCount": 1820,
-        "collectCount": 932,
-        "shareCount": 251,
-        "coverUrl": "https://example.com/cover.jpg",
-        "videoDna": "这类视频的核心成功点在于...",
-        "publishTime": 1773651000,
-        "crawlTime": 1773715200,
-        "category": "mouse",
-        "favorite": true
-      }
-    ]
-  }
-}
+```bash
+curl --get "${OMNIFLUXMIND_BASE_URL%/}/insight/potential-products" \
+  -H "Accept: application/json, text/plain, */*" \
+  -H "Referer: ${OMNIFLUXMIND_REFERER:-http://114.55.91.177/potential-products}" \
+  -H "Cookie: sid=${OMNIFLUXMIND_API_KEY}" \
+  --data-urlencode "category=keyboard" \
+  --data-urlencode "page=1" \
+  --data-urlencode "size=12"
 ```
 
-### Response fields
+### Public leads
 
-- `code` `number`
-  Business status code. `0` means success.
-- `message` `string`
-  Status message.
-- `data.total` `number`
-  Total matched records.
-- `data.list` `array`
-  Current page records.
+```bash
+curl --get "${OMNIFLUXMIND_BASE_URL%/}/insight/leads" \
+  -H "Accept: application/json, text/plain, */*" \
+  -H "Referer: ${OMNIFLUXMIND_REFERER:-http://114.55.91.177/leads}" \
+  -H "Cookie: sid=${OMNIFLUXMIND_API_KEY}" \
+  --data-urlencode "category=keyboard" \
+  --data-urlencode "sceneType=comment" \
+  --data-urlencode "intentionLevel=HIGH" \
+  --data-urlencode "followStatus=UNFOLLOWED" \
+  --data-urlencode "page=1" \
+  --data-urlencode "size=10"
+```
 
-Each `data.list[]` item may contain:
+### Competitor accounts
 
-- `id` `number`
-- `title` `string`
-- `authorName` `string`
-- `platform` `string`
-- `platformPostId` `string`
-- `videoUrl` `string`
-- `likeCount` `number`
-- `commentCount` `number`
-- `collectCount` `number`
-- `shareCount` `number`
-- `coverUrl` `string`
-- `videoDna` `string`
-- `publishTime` `number`
-  Unix seconds
-- `crawlTime` `number`
-  Unix seconds
-- `category` `string`
-- `favorite` `boolean`
-  Observed in current UI responses; treat as optional
+```bash
+curl "${OMNIFLUXMIND_BASE_URL%/}/insight/category-user-profiles" \
+  -H "Accept: application/json, text/plain, */*" \
+  -H "Content-Type: application/json" \
+  -H "Referer: ${OMNIFLUXMIND_REFERER:-http://114.55.91.177/category-user-profiles}" \
+  -H "Cookie: sid=${OMNIFLUXMIND_API_KEY}" \
+  --data '{"platform":"douyin","keyword":"键盘"}'
+```
 
 ## Output expectations
 
 When answering the user after collection:
 
 - Prefer ranked summaries over dumping raw JSON.
-- Include the applied filters.
-- Highlight top videos by likes, shares, and recency when useful.
+- Include the applied filters or request body.
+- For hot videos, highlight top creators, engagement, and recency.
+- For potential products, highlight category concentration, price bands, and sales ranges.
+- For public leads, highlight category, scene type, intention, and follow-up status.
+- For competitor accounts, highlight follower scale, positioning, and repeated themes.
 - Call out missing data or empty lists explicitly.
 - If the API fails, report the HTTP or business error and suggest checking whether the `sid` token expired.
 
 ## Tooling
 
-Use the bundled script:
+Use the bundled scripts:
 
 ```bash
 scripts/fetch_hot_videos.sh --time-range all --favorite-status ALL --sort-by COMPREHENSIVE --page 1 --size 12
+scripts/fetch_potential_products.sh --category keyboard --page 1 --size 12
+scripts/collect_potential_products.sh --category keyboard
+scripts/fetch_public_leads.sh --category keyboard --scene-type comment --intention-level HIGH --follow-status UNFOLLOWED --page 1 --size 10
+scripts/fetch_public_lead_meta.sh
+scripts/fetch_public_lead_overview.sh --category keyboard
+scripts/collect_public_leads.sh --category keyboard --collect-type comment
+scripts/query_category_user_profiles.sh --platform douyin --keyword "键盘"
 ```
